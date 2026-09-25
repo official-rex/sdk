@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "prebuild": "node generate-icons.js",
-    "dev": "vite build --watch --mode development",
-    "build": "tsc --noEmit && vite build",
+    "dev": "node init && vite build --watch --mode development",
+    "build": "node init && tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
