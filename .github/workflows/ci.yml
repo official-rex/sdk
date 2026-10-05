@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20, 22]
+        node-version: [20, 22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -25,6 +25,10 @@ jobs:
       - run: pnpm run format:check
       - run: pnpm build
       - run: pnpm api:check
+      # Compile-time checks for the public types. Runs plain `tsc` on purpose:
+      # `vitest --typecheck` silently reports zero errors for type errors inside
+      # test() bodies in this repo, so it cannot be trusted as a gate.
+      - run: pnpm test:types
       - run: pnpm test
 
   entrypoints:
@@ -32,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20, 22]
+        node-version: [20, 22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -45,6 +49,51 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm test:exports
+      # `pnpm pack --dry-run` over the same dist/: the tarball has to list only
+      # the files `package.json`'s `files` field intends.
+      - name: Verify only intended files would be published
+        run: pnpm pack:check
+
+  compat:
+    name: Compatibility matrix (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      # A runtime that cannot install the SDK should not mask one that can.
+      fail-fast: false
+      matrix:
+        include:
+          - name: Node 20
+            node-version: 20
+            command: pnpm test:compat
+          - name: Node 22
+            node-version: 22
+            command: pnpm test:compat
+          - name: Node 24
+            node-version: 24
+            command: pnpm test:compat
+          - name: Bun 1.x
+            node-version: 22
+            bun: true
+            # The runtime checks import the built package under Bun, which is
+            # the part of the matrix that is runtime-specific. The bundle and
+            # tarball checks are runtime-independent and run on Node above.
+            command: bun scripts/compat/verify-imports.mjs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: oven-sh/setup-bun@v2
+        if: matrix.bun
+        with:
+          bun-version: 1.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: ${{ matrix.command }}
 
   differential:
     name: Differential (test-vectors vs vN-1)

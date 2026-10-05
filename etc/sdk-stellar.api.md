@@ -46,6 +46,25 @@ export interface AnnouncementCache {
     setLastSeen(network: Network, ledger: number, cursor: string): Promise<void>;
 }
 
+// @public (undocumented)
+export interface AnnouncementParseContext {
+    // (undocumented)
+    endpoint?: string;
+    // (undocumented)
+    eventId?: unknown;
+}
+
+// @public
+export class AnnouncementParseError extends Error {
+    constructor(message: string, field: string, context?: AnnouncementParseContext);
+    // (undocumented)
+    readonly endpoint?: string;
+    // (undocumented)
+    readonly eventId?: string;
+    // (undocumented)
+    readonly field: string;
+}
+
 // @public
 export function assertViewTagBucket(bucket: number): void;
 
@@ -257,6 +276,11 @@ export interface BuildWithdrawCustomAssetOptions {
 export function bytesToHex(bytes: Uint8Array): string;
 
 // @public
+export class CacheQuotaError extends Error {
+    constructor(message?: string);
+}
+
+// @public
 export function checkStealthAddress(ephemeralPubKey: Uint8Array, viewingKey: Uint8Array, spendingPubKey: Uint8Array, viewTag: number): {
     isMatch: boolean;
     stealthAddress: string | null;
@@ -427,12 +451,8 @@ export function hexToBytes(hex: string): Uint8Array;
 
 // @public (undocumented)
 export interface HorizonClient {
-    get<T = unknown>(path: string, overrides?: {
-        retry?: Partial<RetryPolicy>;
-    }): Promise<T>;
-    post<T = unknown>(path: string, body: URLSearchParams | string, overrides?: {
-        retry?: Partial<RetryPolicy>;
-    }): Promise<T>;
+    get<T = unknown>(path: string, overrides?: HorizonRequestOptions): Promise<T>;
+    post<T = unknown>(path: string, body: URLSearchParams | string, overrides?: HorizonRequestOptions): Promise<T>;
 }
 
 // @public (undocumented)
@@ -440,6 +460,13 @@ export interface HorizonClientConfig {
     fetchImpl?: typeof fetch;
     horizonUrl: string;
     retry?: Partial<RetryPolicy>;
+    timeouts?: RequestTimeouts;
+}
+
+// @public
+export interface HorizonRequestOptions {
+    retry?: Partial<RetryPolicy>;
+    timeouts?: RequestTimeouts;
 }
 
 // @public
@@ -521,7 +548,7 @@ export type Network = 'testnet' | 'mainnet';
 // Warning: (ae-internal-missing-underscore) The name "parseAnnouncementEvent" should be prefixed with an underscore because the declaration is marked as @internal
 //
 // @internal
-export function parseAnnouncementEvent(event: Record<string, unknown>): Announcement | null;
+export function parseAnnouncementEvent(event: Record<string, unknown>, context?: AnnouncementParseContext): Announcement | null;
 
 // @public
 export interface PathStealthPaymentResult {
@@ -540,6 +567,12 @@ export function prepareStealthAccountForAsset(accountBalances: Array<{
 
 // @public
 export function pubKeyToStellarAddress(pubKeyBytes: Uint8Array): string;
+
+// @public
+export interface RequestTimeouts {
+    connectMs?: number;
+    requestMs?: number;
+}
 
 // @public (undocumented)
 export class RetentionExceededError extends Error {
@@ -597,6 +630,7 @@ export interface RpcClientConfig {
         baseDelayMs: number;
         maxDelayMs: number;
     };
+    timeouts?: RequestTimeouts;
     tracer?: Tracer;
 }
 
@@ -608,6 +642,7 @@ export interface RpcEndpoint {
 
 // @public
 export interface RpcRequestOptions {
+    timeouts?: RequestTimeouts;
     tracer?: Tracer;
 }
 
@@ -684,6 +719,8 @@ export interface StealthMetaAddress {
 // @public
 export interface StealthPayment {
     amount: string;
+    asset?: string;
+    assetIssuer?: string;
     metaAddress: string;
 }
 

@@ -65,12 +65,13 @@ export { bytesToHex, hexToBytes } from './utils';
  * @internal
  */
 export { fetchAnnouncementsStream, parseAnnouncementEvent } from './announcements';
-export { RetentionExceededError } from './announcements';
+export { AnnouncementParseError, RetentionExceededError } from './announcements';
+export type { AnnouncementParseContext } from './announcements';
 export type { FetchAnnouncementsOptions } from './announcements';
 /**
  * @internal
  */
-export { MemoryCache, IndexedDBCache, autoSelectCache } from './cache';
+export { MemoryCache, IndexedDBCache, autoSelectCache, CacheQuotaError } from './cache';
 export type { AnnouncementCache } from './cache';
 
 /**
@@ -148,7 +149,13 @@ export type {
 export { MemoValidationError, TEXT_MEMO_MAX_BYTES, HASH_MEMO_BYTES, ID_MEMO_MAX } from './memo';
 
 export { createHorizonClient } from './horizon';
-export type { RetryPolicy, HorizonClient, HorizonClientConfig } from './horizon';
+export type {
+  RetryPolicy,
+  HorizonClient,
+  HorizonClientConfig,
+  HorizonRequestOptions,
+} from './horizon';
 
 export { createRpcClient } from './rpc';
 export type { RpcClient, RpcClientConfig, RpcEndpoint, RpcRequestOptions } from './rpc';
+export type { RequestTimeouts } from './timeouts';
